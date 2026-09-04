@@ -25,9 +25,6 @@ data work.airbnb;
             rating_reviewsCount=reviews_count
         )
     );
-    /* 리뷰 수는 치우침이 클 수 있어 로그 변환 변수도 함께 생성 */
-    if reviews_count >= 0 then log_reviews_count = log1px(reviews_count);
-    else log_reviews_count = .;
     label
         guest_satisfaction = '종합 만족도'
         accuracy           = '정확성'
@@ -36,8 +33,7 @@ data work.airbnb;
         communication      = '의사소통'
         location           = '위치'
         value              = '가성비'
-        reviews_count      = '총 리뷰 수'
-        log_reviews_count  = '총 리뷰 수(로그1p)';
+        reviews_count      = '총 리뷰 수';
 run;
 
 title1 'Airbnb 평점·리뷰 이변량분석';
@@ -48,15 +44,15 @@ run;
 
 proc means data=work.airbnb n nmiss mean std min p25 median p75 max maxdec=3;
     var guest_satisfaction accuracy cleanliness checking communication location value
-        reviews_count log_reviews_count;
+        reviews_count;
 run;
 
 /* 종합 만족도와 각 세부 평점·리뷰 수의 Pearson/Spearman 상관 */
 title2 '종합 만족도와 세부 변수의 상관분석';
-proc corr data=work.airbnb pearson spearman nosimple plots=matrix(histogram);
+proc corr data=work.airbnb pearson spearman nosimple;
     var guest_satisfaction;
     with accuracy cleanliness checking communication location value
-         reviews_count log_reviews_count;
+         reviews_count;
 run;
 
 /* 세부 평점 전체의 상호 상관행렬 */
@@ -75,7 +71,6 @@ proc reg data=work.airbnb plots(only)=(fitplot residualplot qqplot);
     model guest_satisfaction = location / clb stb vif;
     model guest_satisfaction = value / clb stb vif;
     model guest_satisfaction = reviews_count / clb stb vif;
-    model guest_satisfaction = log_reviews_count / clb stb vif;
 run;
 quit;
 
@@ -98,12 +93,11 @@ quit;
 %bivar_plot(x=location,      label=위치);
 %bivar_plot(x=value,         label=가성비);
 %bivar_plot(x=reviews_count, label=총 리뷰 수);
-%bivar_plot(x=log_reviews_count, label=로그 변환 총 리뷰 수);
 
 /* 7개 평점 변수의 전체 쌍별 산점도 행렬 */
 title2 '평점 변수 전체 산점도 행렬';
 proc sgscatter data=work.airbnb;
-    matrix guest_satisfaction accuracy cleanliness checking communication location value
+    matrix guest_satisfaction accuracy cleanliness checking communication location value reviews_count
         / diagonal=(histogram kernel) reg;
 run;
 
