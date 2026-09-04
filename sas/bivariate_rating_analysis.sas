@@ -13,7 +13,18 @@ ods graphics on;
 libname indata "&data_dir";
 
 data work.airbnb;
-    set indata.airbnb_final_per_person;
+    set indata.airbnb_final_per_person(
+        rename=(
+            rating_guestSatisfaction=guest_satisfaction
+            rating_accuracy=accuracy
+            rating_cleanliness=cleanliness
+            rating_checking=checking
+            rating_communication=communication
+            rating_location=location
+            rating_value=value
+            rating_reviewsCount=reviews_count
+        )
+    );
     /* 리뷰 수는 치우침이 클 수 있어 로그 변환 변수도 함께 생성 */
     if reviews_count >= 0 then log_reviews_count = log1px(reviews_count);
     else log_reviews_count = .;
