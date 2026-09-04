@@ -8,9 +8,8 @@
 options nodate nonumber validvarname=any;
 ods graphics on;
 
-/* SAS Studio의 '파일 및 폴더'에서 확인한 실제 업로드 폴더로 변경하세요.
-   예: %let data_dir=/home/u12345678/myfiles; */
-%let data_dir=/home/USERNAME;
+/* SAS Studio Files(Home)/airbnb 폴더를 자동으로 가리킵니다. */
+%let data_dir=%sysget(HOME)/airbnb;
 libname indata "&data_dir";
 
 data work.airbnb;
