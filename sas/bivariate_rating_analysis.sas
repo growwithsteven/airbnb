@@ -98,7 +98,7 @@ quit;
 title2 '평점 변수 전체 산점도 행렬';
 proc sgscatter data=work.airbnb;
     matrix guest_satisfaction accuracy cleanliness checking communication location value reviews_count
-        / reg;
+        ;
 run;
 
 title;
