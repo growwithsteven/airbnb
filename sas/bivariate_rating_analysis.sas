@@ -8,9 +8,6 @@
 options nodate nonumber validvarname=any;
 ods graphics on;
 
-/* SAS Studio 결과 창에서 한글이 깨지지 않도록 UTF-8 HTML5 출력 사용 */
-ods html5 options(encoding='utf-8');
-
 /* SAS Studio Files(Home)/airbnb 폴더를 자동으로 가리킵니다. */
 %let data_dir=%sysget(HOME)/airbnb;
 libname indata "&data_dir";
@@ -97,11 +94,11 @@ quit;
 %bivar_plot(x=value,         label=가성비);
 %bivar_plot(x=reviews_count, label=총 리뷰 수);
 
-/* 7개 평점 변수의 전체 쌍별 산점도 행렬 */
+/* 8개 지정 변수의 전체 쌍별 산점도 행렬 */
 title2 '평점 변수 전체 산점도 행렬';
 proc sgscatter data=work.airbnb;
     matrix guest_satisfaction accuracy cleanliness checking communication location value reviews_count
-        / diagonal=(histogram kernel) reg;
+        / reg;
 run;
 
 title;
