@@ -8,6 +8,9 @@
 options nodate nonumber validvarname=any;
 ods graphics on;
 
+/* SAS Studio 결과 창에서 한글이 깨지지 않도록 UTF-8 HTML5 출력 사용 */
+ods html5 options(encoding='utf-8');
+
 /* SAS Studio Files(Home)/airbnb 폴더를 자동으로 가리킵니다. */
 %let data_dir=%sysget(HOME)/airbnb;
 libname indata "&data_dir";
