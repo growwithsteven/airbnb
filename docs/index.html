@@ -1,0 +1,1870 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Airbnb Database Schema & Data Dictionary</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --bg: #f8fafc;
+      --text: #1e293b;
+      --border: #e2e8f0;
+      --card-bg: #ffffff;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    .schema-title {
+      margin: 0 0 1.25rem;
+      color: #334155;
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: -0.01em;
+    }
+
+    /* ERD: keep the schema in the normal document flow so table text stays legible. */
+    #erd-container {
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px 12px 0 0;
+      box-shadow: none;
+      overflow: hidden;
+    }
+    .mermaid {
+      width: 100%;
+      padding: 1rem;
+      box-sizing: border-box;
+      line-height: 0;
+    }
+    .mermaid svg {
+      display: block;
+      width: 100% !important;
+      height: auto;
+      max-width: 100% !important;
+    }
+    .erd-tooltip {
+      position: fixed;
+      z-index: 10;
+      width: min(330px, calc(100vw - 24px));
+      padding: 0.75rem 0.9rem;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 8px 20px rgb(15 23 42 / 0.16);
+      color: #475569;
+      font-size: 13px;
+      line-height: 1.5;
+      pointer-events: none;
+    }
+    .erd-tooltip[hidden] { display: none; }
+    .erd-tooltip strong {
+      display: block;
+      margin-bottom: 0.25rem;
+      color: #1e3a8a;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+    }
+    #erd-container g[id^="entity-"] { cursor: help; }
+
+    #erd { margin-bottom: 0; }
+    #dict { margin-top: 0; }
+    #dict .card {
+      box-sizing: border-box;
+      width: 100%;
+      border-top: 0;
+      border-radius: 0 0 12px 12px;
+      box-shadow: none;
+    }
+    .table-card.is-target {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgb(59 130 246 / 0.16);
+      transition: box-shadow 0.2s, border-color 0.2s;
+    }
+
+    /* Data Dictionary */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    .card h2 {
+      margin-top: 0;
+      border-bottom: 2px solid var(--bg);
+      padding-bottom: 0.5rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+      font-size: 14px;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      background-color: var(--bg);
+      font-weight: 600;
+      color: #334155;
+    }
+    tr:hover {
+      background-color: #f8fafc;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+    .domain-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--primary);
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+    }
+  
+    /* Enhanced Data Dictionary Styling */
+    .domain-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .domain-pill {
+      padding: 6px 14px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .domain-pill:hover {
+      background: #e2e8f0;
+    }
+    .domain-pill.active {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+    }
+    .domain-section {
+      margin-bottom: 2.5rem;
+    }
+    .domain-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .domain-icon { font-size: 20px; }
+    .table-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .table-header {
+      background: #f8fafc;
+      padding: 12px 18px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .table-title {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .table-badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #0f172a;
+      color: #ffffff;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .table-sub {
+      color: #64748b;
+      font-size: 13px;
+    }
+    .dict-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 0;
+      font-size: 13.5px;
+    }
+    .dict-table th {
+      background: #f8fafc;
+      padding: 10px 16px;
+      font-size: 12.5px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .dict-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+      line-height: 1.5;
+    }
+    .dict-table tr:last-child td {
+      border-bottom: none;
+    }
+    .dict-table tr:hover {
+      background: #f8fafc;
+    }
+    .col-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #f1f5f9;
+      color: #0f172a;
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid #e2e8f0;
+      display: inline-block;
+    }
+    .type-badge {
+      font-size: 11px;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .pk-badge {
+      font-size: 10.5px;
+      background: #fee2e2;
+      color: #dc2626;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .fk-badge {
+      font-size: 10.5px;
+      background: #fef3c7;
+      color: #d97706;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .col-kr {
+      color: #1e293b;
+      font-weight: 600;
+    }
+    .col-desc {
+      color: #334155;
+    }
+    .search-highlight {
+      background: #fef08a;
+      padding: 1px 3px;
+      border-radius: 2px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="schema-title">Airbnb 데이터 스키마</h1>
+
+    <section id="erd" aria-label="ERD 다이어그램">
+      <div id="erd-container">
+        <div class="mermaid" id="diagram">
+erDiagram
+    HOST ||--o{ HOST_HIGHLIGHT : "has"
+    HOST ||--o{ HOST_DETAIL : "has"
+    HOST ||--o{ LISTING : "hosts"
+
+    CO_HOST ||--o{ LISTING_CO_HOST : "co-hosts"
+    LISTING ||--o{ LISTING_CO_HOST : "has co-host"
+
+    LISTING ||--|| LISTING_RATING : "has"
+    LISTING ||--|| LISTING_PRICE : "has"
+    LISTING ||--o{ LISTING_IMAGE : "contains"
+    LISTING ||--o{ LISTING_SUB_DESCRIPTION : "describes"
+    LISTING ||--o{ LISTING_LOCATION_DESCRIPTION : "details"
+    LISTING ||--o{ LISTING_BREADCRUMB : "located along"
+    LISTING ||--o{ LISTING_HIGHLIGHT : "features"
+    LISTING ||--o{ LISTING_HOUSE_RULE : "enforces"
+
+    CANCELLATION_POLICY ||--o{ LISTING_CANCELLATION_POLICY : "applied to"
+    LISTING ||--o{ LISTING_CANCELLATION_POLICY : "applies"
+
+    AMENITY_CATEGORY ||--o{ AMENITY : "categorizes"
+    AMENITY ||--o{ LISTING_AMENITY : "offered by"
+    LISTING ||--o{ LISTING_AMENITY : "offers"
+
+    HOST {
+        varchar id PK "호스트 고유 ID"
+        varchar name "호스트 이름"
+        varchar profile_image_url "프로필 이미지 URL"
+        boolean is_superhost "슈퍼호스트 여부"
+        boolean is_verified "신원 인증 여부"
+        text about "호스트 소개글"
+        decimal rating_average "호스트 평균 평점"
+        int rating_count "호스트 리뷰 총 수"
+        int time_as_host_years "활동 연수"
+        int time_as_host_months "활동 개월수"
+    }
+
+    HOST_HIGHLIGHT {
+        bigint id PK "강조 문구 ID"
+        varchar host_id FK "호스트 ID"
+        varchar highlight "강조 문구"
+    }
+
+    HOST_DETAIL {
+        bigint id PK "상세 정보 ID"
+        varchar host_id FK "호스트 ID"
+        varchar detail "상세 항목"
+    }
+
+    CO_HOST {
+        varchar id PK "공동 호스트 고유 ID"
+        varchar name "공동 호스트 이름"
+        varchar profile_picture_url "프로필 이미지 URL"
+    }
+
+    LISTING_CO_HOST {
+        varchar listing_id PK "숙소 ID"
+        varchar co_host_id FK "공동 호스트 ID"
+    }
+
+    LISTING {
+        varchar id PK "숙소 고유 ID"
+        varchar host_id FK "메인 호스트 ID"
+        varchar title "숙소 제목"
+        text description "상세 설명"
+        text html_description "HTML 상세 설명"
+        varchar description_original_language "원본 언어 코드"
+        text meta_description "메타 설명"
+        varchar seo_title "SEO 제목"
+        varchar sharing_config_title "공유용 제목"
+        varchar property_type "숙소 유형"
+        varchar room_type "객실 유형"
+        int home_tier "숙소 티어"
+        int person_capacity "수용 가능 인원"
+        varchar thumbnail_url "대표 썸네일 URL"
+        varchar url "웹 상세 URL"
+        varchar android_link "안드로이드 딥링크"
+        varchar ios_link "iOS 딥링크"
+        boolean is_available "예약 가능 여부"
+        varchar language "데이터 언어"
+        varchar sub_description_title "서브 설명 타이틀"
+        decimal latitude "위도"
+        decimal longitude "경도"
+        varchar location_name "지역명"
+        varchar location_subtitle "지역 보조 설명"
+        varchar brand_subtitle "브랜드 서브타이틀"
+        boolean has_golden_laurel "골든 로럴 뱃지 여부"
+        date check_in_date "기준 체크인 날짜"
+        date check_out_date "기준 체크아웃 날짜"
+        timestamp crawled_at "수집/생성 시각"
+    }
+
+    LISTING_SUB_DESCRIPTION {
+        bigint id PK "서브 설명 항목 ID"
+        varchar listing_id FK "숙소 ID"
+        varchar item_text "요약 텍스트"
+        int sort_order "정렬 순서"
+    }
+
+    LISTING_RATING {
+        varchar listing_id PK "숙소 ID"
+        decimal guest_satisfaction "게스트 종합 만족도"
+        decimal accuracy "정확성 평점"
+        decimal cleanliness "청결도 평점"
+        decimal checking "체크인 평점"
+        decimal communication "의사소통 평점"
+        decimal location "위치 평점"
+        decimal value "가격 대비 가치 평점"
+        int reviews_count "총 리뷰 수"
+    }
+
+    LISTING_PRICE {
+        varchar listing_id PK "숙소 ID"
+        varchar label "가격 라벨"
+        varchar qualifier "가격 기준 단위"
+        varchar price_amount "표시 가격"
+        varchar original_price "원래 가격"
+        varchar discounted_price "할인 가격"
+        varchar base_price_description "기본 숙박비 설명"
+        varchar base_price_amount "기본 숙박비 금액"
+        varchar service_fee "서비스 수수료"
+        varchar cleaning_fee "청소비"
+        varchar taxes_description "세금 설명"
+        varchar taxes_amount "세금 금액"
+        varchar special_offer_description "특별 할인 설명"
+        varchar special_offer_amount "특별 할인 금액"
+        varchar total_price_description "총액 설명"
+        varchar total_price_amount "총 결제 금액"
+        varchar total_before_taxes "세전 총액"
+        varchar early_bird_discount "얼리버드 할인"
+    }
+
+    LISTING_IMAGE {
+        bigint id PK "이미지 ID"
+        varchar listing_id FK "숙소 ID"
+        varchar image_url "이미지 URL"
+        text caption "이미지 캡션"
+        varchar orientation "방향"
+        int sort_order "노출 순서"
+    }
+
+    LISTING_LOCATION_DESCRIPTION {
+        bigint id PK "위치 설명 ID"
+        varchar listing_id FK "숙소 ID"
+        varchar title "위치 제목"
+        text content "위치 상세 설명 내용"
+    }
+
+    LISTING_BREADCRUMB {
+        bigint id PK "브레드크럼 ID"
+        varchar listing_id FK "숙소 ID"
+        int step_order "단계 순서"
+        varchar link_route "이동 라우트"
+        varchar link_text "링크 텍스트"
+        varchar search_text "검색 텍스트"
+    }
+
+    LISTING_HIGHLIGHT {
+        bigint id PK "숙소 강조특징 ID"
+        varchar listing_id FK "숙소 ID"
+        varchar title "특징 제목"
+        text subtitle "특징 부제"
+        varchar icon "아이콘 식별자"
+        varchar highlight_type "특징 유형"
+    }
+
+    LISTING_HOUSE_RULE {
+        bigint id PK "이용 규칙 ID"
+        varchar listing_id FK "숙소 ID"
+        varchar category "규칙 분류"
+        varchar title "규칙 제목"
+        varchar icon "아이콘 식별자"
+        text additional_info "추가 안내"
+    }
+
+    CANCELLATION_POLICY {
+        int id PK "취소 정책 ID"
+        varchar policy_name "정책명"
+    }
+
+    LISTING_CANCELLATION_POLICY {
+        varchar listing_id PK "숙소 ID"
+        int cancellation_policy_id FK "취소 정책 ID"
+    }
+
+    AMENITY_CATEGORY {
+        int id PK "편의시설 카테고리 ID"
+        varchar name "카테고리명"
+    }
+
+    AMENITY {
+        int id PK "편의시설 ID"
+        int category_id FK "카테고리 ID"
+        varchar title "편의시설 이름"
+        varchar icon "아이콘 식별자"
+    }
+
+    LISTING_AMENITY {
+        varchar listing_id PK "숙소 ID"
+        int amenity_id FK "편의시설 ID"
+        varchar subtitle "부제/설명"
+        boolean is_available "제공 여부"
+    }
+        </div>
+      </div>
+    </section>
+
+    <aside id="erd-tooltip" class="erd-tooltip" role="tooltip" hidden></aside>
+
+    
+    <section id="dict" aria-label="데이터 사전">
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <h2 style="margin: 0 0 0.5rem 0;">상세 변수 정의</h2>
+            <p style="color: #64748b; margin: 0; font-size: 14px;">19개 정규화 테이블 및 123개 전체 컬럼(변수)의 한글 명칭과 서술적 상세 설명입니다.</p>
+          </div>
+          <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 400px;">
+            <input type="text" id="dictSearch" placeholder="🔍 변수명(예: price, rating) 또는 설명 검색..." 
+                   style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                   oninput="filterDictionary(this.value)">
+          </div>
+        </div>
+
+        <!-- Quick Domain Nav -->
+        <div class="domain-nav">
+          <button class="domain-pill active" onclick="filterDomain('all')">전체 보기 (19개)</button>
+          <button class="domain-pill" onclick="filterDomain('host')">👤 호스트 (5개)</button>
+          <button class="domain-pill" onclick="filterDomain('listing')">🛏️ 숙소 기본 (4개)</button>
+          <button class="domain-pill" onclick="filterDomain('rating')">⭐ 평점/리뷰 (1개)</button>
+          <button class="domain-pill" onclick="filterDomain('price')">💰 가격/요금 (1개)</button>
+          <button class="domain-pill" onclick="filterDomain('content')">🖼️ 콘텐츠/규칙 (3개)</button>
+          <button class="domain-pill" onclick="filterDomain('amenity')">✅ 정책/편의시설 (5개)</button>
+        </div>
+
+        <div class="domain-section" data-domain="host">
+          <div class="domain-header">
+            <span class="domain-icon">👤</span>
+            <span class="domain-name">호스트 도메인 (Host Domain) · 5개 테이블</span>
+          </div>
+    
+          <div class="table-card" data-table="HOST">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">HOST</span>
+                <span class="table-sub">숙소를 등록하고 운영하는 메인 호스트의 신원, 평판 및 프로필 정보를 담고 있는 마스터 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>호스트 고유 ID</strong></td>
+                  <td class="col-desc">에어비앤비 플랫폼에서 호스트를 고유하게 식별하는 식별자입니다. 여러 숙소를 운영하는 멀티 호스트 분석 시 기준이 됩니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">name</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>호스트 이름</strong></td>
+                  <td class="col-desc">호스트가 프로필에 등록한 이름 또는 대외 활동용 닉네임입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">profile_image_url</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>프로필 사진 URL</strong></td>
+                  <td class="col-desc">호스트 프로필 이미지의 원본 웹 주소입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">is_superhost</code></td>
+                  <td><span class='type-badge'>BOOLEAN</span></td>
+                  <td class="col-kr"><strong>슈퍼호스트 여부</strong></td>
+                  <td class="col-desc">에어비앤비의 엄격한 서비스 및 평점 기준을 충족하여 공인 슈퍼호스트 자격을 획득했는지 여부입니다 (가격 프리미엄의 주요 독립변수).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">is_verified</code></td>
+                  <td><span class='type-badge'>BOOLEAN</span></td>
+                  <td class="col-kr"><strong>신원 인증 여부</strong></td>
+                  <td class="col-desc">정부 발행 신분증, 전화번호, 이메일 인증 등을 통해 에어비앤비로부터 본인 인증을 완료했는지 여부입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">about</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>호스트 소개글</strong></td>
+                  <td class="col-desc">호스트가 게스트에게 자신을 알리고 신뢰도를 높이기 위해 직접 작성한 프로필 소개 텍스트입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">rating_average</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>호스트 평균 평점</strong></td>
+                  <td class="col-desc">해당 호스트가 운영하는 모든 숙소에 대해 게스트들이 남긴 평점의 전체 평균값입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">rating_count</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>호스트 총 리뷰 수</strong></td>
+                  <td class="col-desc">해당 호스트가 보유한 모든 숙소에 누적된 게스트 리뷰의 총 개수입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">time_as_host_years</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>호스트 활동 연수</strong></td>
+                  <td class="col-desc">에어비앤비 플랫폼에서 호스트로 활동한 기간 중 연(Year) 단위 기간입니다 (호스트의 숙련도 척도).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">time_as_host_months</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>호스트 활동 개월수</strong></td>
+                  <td class="col-desc">호스트 활동 기간 중 연 단위 잔여 개월(Month) 수입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="HOST_HIGHLIGHT">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">HOST_HIGHLIGHT</span>
+                <span class="table-sub">호스트 프로필 상단에 노출되는 강조 키워드나 공식 배지 정보를 저장하는 1:N 하위 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>하이라이트 ID</strong></td>
+                  <td class="col-desc">호스트 하이라이트 항목의 고유 자동증가 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">host_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>호스트 ID</strong></td>
+                  <td class="col-desc">해당 하이라이트가 속한 호스트의 고유 ID입니다 (HOST.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">highlight</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>강조 문구</strong></td>
+                  <td class="col-desc">호스트 프로필에 노출되는 대표 배지 문구입니다 (예: '슈퍼호스트', '높은 응답률', '본인 인증 완료' 등).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="HOST_DETAIL">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">HOST_DETAIL</span>
+                <span class="table-sub">호스트의 응답률, 응답 시간, 구사 가능 언어 등 운영 정책 관련 상세 정보를 담는 1:N 하위 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>상세 정보 ID</strong></td>
+                  <td class="col-desc">호스트 상세 항목의 고유 자동증가 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">host_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>호스트 ID</strong></td>
+                  <td class="col-desc">해당 세부 정보가 속한 호스트의 고유 ID입니다 (HOST.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">detail</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>상세 항목 내용</strong></td>
+                  <td class="col-desc">호스트의 운영 정책 및 소개 상세 텍스트입니다 (예: '응답률: 100%', '응답 시간: 1시간 이내', '구사 가능 언어: 한국어, 영어' 등).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="CO_HOST">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">CO_HOST</span>
+                <span class="table-sub">메인 호스트와 함께 숙소를 관리 및 운영하는 공동 호스트들의 프로필 정보를 담고 있는 마스터 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>공동 호스트 ID</strong></td>
+                  <td class="col-desc">공동 호스트를 고유하게 식별하는 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">name</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>공동 호스트 이름</strong></td>
+                  <td class="col-desc">공동 호스트의 이름 또는 닉네임입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">profile_picture_url</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>프로필 사진 URL</strong></td>
+                  <td class="col-desc">공동 호스트의 프로필 사진 이미지 웹 주소입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="LISTING_CO_HOST">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_CO_HOST</span>
+                <span class="table-sub">숙소와 공동 호스트 간의 다대다(N:M) 관계를 정의하는 매핑 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">공동 호스트가 배속된 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">co_host_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>공동 호스트 ID</strong></td>
+                  <td class="col-desc">숙소 관리에 참여하는 공동 호스트의 고유 ID입니다 (CO_HOST.id 참조).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="domain-section" data-domain="listing">
+          <div class="domain-header">
+            <span class="domain-icon">🛏️</span>
+            <span class="domain-name">숙소 핵심 도메인 (Listing Domain) · 4개 테이블</span>
+          </div>
+    
+          <div class="table-card" data-table="LISTING">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING</span>
+                <span class="table-sub">서울 시내 각 에어비앤비 숙소의 기본 사양, 지리적 위치 좌표 및 메타데이터를 담고 있는 전체 분석의 중심 마스터 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>숙소 고유 ID</strong></td>
+                  <td class="col-desc">에어비앤비 플랫폼 전체에서 숙소를 고유하게 식별하는 고유 번호입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">host_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>메인 호스트 ID</strong></td>
+                  <td class="col-desc">해당 숙소를 등록하고 책임 운영하는 메인 호스트의 고유 ID입니다 (HOST.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">title</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>숙소 제목</strong></td>
+                  <td class="col-desc">에어비앤비 검색 결과 목록 및 상세 페이지 최상단에 노출되는 대표 숙소 제목입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">description</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>숙소 상세 설명</strong></td>
+                  <td class="col-desc">호스트가 작성한 공간의 매력, 인테리어 구조, 주의사항 등을 담은 전체 텍스트 설명입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">html_description</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>HTML 원본 상세 설명</strong></td>
+                  <td class="col-desc">줄바꿈, 볼드체 등 서식 태그가 그대로 포함된 원본 HTML 형태의 숙소 설명입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">description_original_language</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>설명 원본 언어</strong></td>
+                  <td class="col-desc">호스트가 숙소 설명을 최초 등록할 때 사용한 언어 코드입니다 (예: ko, en, zh).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">meta_description</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>메타 설명 텍스트</strong></td>
+                  <td class="col-desc">포털 검색 엔진 노출 및 SNS 링크 공유 시 미리보기 카드로 표시되는 요약 설명 텍스트입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">seo_title</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>SEO 제목</strong></td>
+                  <td class="col-desc">검색 엔진 최적화(SEO) 목적으로 브라우저 탭에 표시되는 페이지 타이틀입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">sharing_config_title</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>공유 카드 요약 제목</strong></td>
+                  <td class="col-desc">모바일 메신저 등에서 링크 공유 시 표시되는 핵심 스펙 요약 문구입니다 (예: 침실 2개, 침대 2개, 욕실 1개 등).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">property_type</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>건축물/숙소 유형</strong></td>
+                  <td class="col-desc">숙소의 건축 및 공간적 분류입니다 (예: Entire rental unit, Entire home, Serviced apartment, Villa 등).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">room_type</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>공간 점유 유형</strong></td>
+                  <td class="col-desc">게스트가 사용하는 공간의 배타적 점유 형태입니다 (Entire home/apt: 공간 전체, Private room: 개인실, Shared room: 다인실).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">home_tier</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>숙소 등급 티어</strong></td>
+                  <td class="col-desc">에어비앤비 자체 등급 체계입니다 (1: 일반 숙소, 2 이상: 에어비앤비 플러스/럭스 등 프리미엄 숙소).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">person_capacity</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>최대 수용 인원</strong></td>
+                  <td class="col-desc">숙소에 합법적 및 물리적으로 투숙 가능한 최대 게스트 인원수입니다 (가격 결정의 핵심 독립변수).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">thumbnail_url</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>대표 썸네일 URL</strong></td>
+                  <td class="col-desc">검색 목록 카드에 첫 번째로 노출되는 대표 이미지의 주소입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">url</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>상세 페이지 웹 링크</strong></td>
+                  <td class="col-desc">에어비앤비 공식 웹사이트에서 해당 숙소 상세 화면으로 이동할 수 있는 전체 웹 링크입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">android_link</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>안드로이드 딥링크</strong></td>
+                  <td class="col-desc">안드로이드 모바일 기기에서 에어비앤비 앱으로 바로 열 수 있는 URI 스키마 링크입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">ios_link</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>iOS 딥링크</strong></td>
+                  <td class="col-desc">아이폰/아이패드 기기에서 에어비앤비 모바일 앱으로 바로 열 수 있는 URI 스키마 링크입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">is_available</code></td>
+                  <td><span class='type-badge'>BOOLEAN</span></td>
+                  <td class="col-kr"><strong>예약 가능 여부</strong></td>
+                  <td class="col-desc">크롤링 검색 일정 기준으로 해당 숙소의 예약이 열려 있었는지 여부입니다 (True/False).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">language</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>응답 데이터 언어</strong></td>
+                  <td class="col-desc">크롤링 API 응답 시 수신된 데이터의 언어 설정값입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">sub_description_title</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>서브 타이틀</strong></td>
+                  <td class="col-desc">상세 페이지 제목 바로 아래 노출되는 숙소 위치 및 유형 부제 문구입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">latitude</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>위도 (Latitude)</strong></td>
+                  <td class="col-desc">숙소의 지리적 위치를 나타내는 WGS84 기준 위도 좌표입니다 (지리적 분석, 지하철역/관광지 거리 산출의 핵심 변수).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">longitude</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>경도 (Longitude)</strong></td>
+                  <td class="col-desc">숙소의 지리적 위치를 나타내는 WGS84 기준 경도 좌표입니다 (지리적 분석, 자치구 군집화의 핵심 변수).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">location_name</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>행정 구역명</strong></td>
+                  <td class="col-desc">숙소가 위치한 행정 구역 및 도시 명칭입니다 (예: 'Seoul, South Korea', 'Mapo-gu' 등).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">location_subtitle</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>지역 보조 설명</strong></td>
+                  <td class="col-desc">숙소 주변의 랜드마크나 번화가 권역을 나타내는 보조 지명 문구입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">brand_subtitle</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>브랜드 서브타이틀</strong></td>
+                  <td class="col-desc">체인형 스테이나 특화 프로그램에 속한 숙소일 경우 표시되는 브랜드 명칭입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">has_golden_laurel</code></td>
+                  <td><span class='type-badge'>BOOLEAN</span></td>
+                  <td class="col-kr"><strong>골든 로럴 배지 보유 여부</strong></td>
+                  <td class="col-desc">게스트 선호(Guest Favorite) 또는 상위 5% 최우수 숙소에 부여되는 골든 로럴 엠블럼 보유 여부입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">check_in_date</code></td>
+                  <td><span class='type-badge'>DATE</span></td>
+                  <td class="col-kr"><strong>수집 기준 체크인 날짜</strong></td>
+                  <td class="col-desc">크롤링 수집 당시 요금 및 예약 여부를 확인하기 위해 설정한 가상 체크인 일정입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">check_out_date</code></td>
+                  <td><span class='type-badge'>DATE</span></td>
+                  <td class="col-kr"><strong>수집 기준 체크아웃 날짜</strong></td>
+                  <td class="col-desc">크롤링 수집 당시 설정한 가상 체크아웃 일정입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">crawled_at</code></td>
+                  <td><span class='type-badge'>TIMESTAMP</span></td>
+                  <td class="col-kr"><strong>데이터 수집 시각</strong></td>
+                  <td class="col-desc">해당 숙소의 원본 JSON 정보가 에어비앤비에서 스크래핑된 시스템 타임스탬프입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="LISTING_SUB_DESCRIPTION">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_SUB_DESCRIPTION</span>
+                <span class="table-sub">수용인원, 침실 수, 침대 수, 욕실 수 등 숙소의 물리적 공간 구성을 나타내는 핵심 스펙 태그 목록입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>항목 ID</strong></td>
+                  <td class="col-desc">서브 설명 항목의 고유 자동증가 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">해당 스펙 태그가 속한 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">item_text</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>스펙 텍스트</strong></td>
+                  <td class="col-desc">공간 구성을 설명하는 태그 텍스트입니다 (예: '게스트 4명', '침실 2개', '침대 2개', '단독 사용 욕실 1개' 등).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">sort_order</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>노출 순서</strong></td>
+                  <td class="col-desc">상세 페이지 상단 스펙 요약 바에 노출되는 순서 번호입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="LISTING_LOCATION_DESCRIPTION">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_LOCATION_DESCRIPTION</span>
+                <span class="table-sub">호스트가 직접 작성한 숙소 주변 동네의 분위기, 대중교통 이용 팁, 인근 명소 안내 텍스트입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>위치 설명 ID</strong></td>
+                  <td class="col-desc">위치 설명 항목의 고유 자동증가 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">해당 설명이 속한 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">title</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>위치 섹션 제목</strong></td>
+                  <td class="col-desc">위치 안내 섹션의 소제목입니다 (예: '동네 소개', '대중교통 및 교통편').</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">content</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>위치 상세 내용</strong></td>
+                  <td class="col-desc">지하철역 도보 거리, 공항 리무진 버스 정류장 위치, 유명 카페거리 접근성 등을 설명하는 본문 텍스트입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="LISTING_BREADCRUMB">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_BREADCRUMB</span>
+                <span class="table-sub">국가 > 특별시 > 자치구 등 숙소가 속한 지리적 계층 구조(Breadcrumb) 경로 데이터입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>브레드크럼 ID</strong></td>
+                  <td class="col-desc">브레드크럼 항목의 고유 자동증가 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">해당 경로가 속한 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">step_order</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>계층 순서</strong></td>
+                  <td class="col-desc">상위 지역부터 하위 지역으로 이어지는 계층적 단계 번호입니다 (1: 국가, 2: 시/도, 3: 구/동).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">link_route</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>이동 링크 라우트</strong></td>
+                  <td class="col-desc">해당 지역 계층 클릭 시 이동하는 에어비앤비 내부 탐색 경로입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">link_text</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>표시 텍스트</strong></td>
+                  <td class="col-desc">사용자 화면에 표시되는 지역 명칭입니다 (예: '대한민국', '서울특별시', '마포구').</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">search_text</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>검색 키워드</strong></td>
+                  <td class="col-desc">에어비앤비 검색 필터에 적용되는 공식 지역 검색어입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="domain-section" data-domain="rating">
+          <div class="domain-header">
+            <span class="domain-icon">⭐</span>
+            <span class="domain-name">평점 및 리뷰 도메인 (Rating Domain) · 1개 테이블</span>
+          </div>
+    
+          <div class="table-card" data-table="LISTING_RATING">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_RATING</span>
+                <span class="table-sub">숙소를 이용한 게스트들이 남긴 6대 세부 평가 항목, 종합 만족도 및 누적 리뷰 개수를 기록한 핵심 품질 분석 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">평점 데이터가 속한 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">guest_satisfaction</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>게스트 종합 만족도</strong></td>
+                  <td class="col-desc">세부 항목들을 모두 종합하여 게스트가 해당 숙소에서의 경험에 대해 전반적으로 얼마나 만족했는지를 보여주는 종합 평점입니다 (5점 만점).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">accuracy</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>정확성 평점</strong></td>
+                  <td class="col-desc">호스트가 작성한 숙소 설명과 사진이 실제 숙소의 모습 및 제공되는 편의시설과 얼마나 일치하는지를 나타내는 평점입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">cleanliness</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>청결도 평점</strong></td>
+                  <td class="col-desc">숙소(침구, 욕실, 주방 등)가 게스트를 맞이하기에 얼마나 깨끗하고 위생적이었는지에 대한 평점입니다 (가격 및 만족도에 지대한 영향).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">checking</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>체크인 평점</strong></td>
+                  <td class="col-desc">게스트가 숙소에 도착하여 체크인하는 과정(비밀번호 안내, 스마트록 작동, 길 안내)이 얼마나 명확하고 순조로웠는지에 대한 평점입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">communication</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>의사소통 평점</strong></td>
+                  <td class="col-desc">예약 전후 및 숙박 기간 동안 호스트가 게스트의 메시지나 질문에 얼마나 빠르고 친절하게 응답했는지를 나타내는 평점입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">location</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>위치 평점</strong></td>
+                  <td class="col-desc">숙소 주변의 환경, 대중교통 접근성, 편의시설, 안전성 등 지리적 위치에 대한 게스트의 만족도를 나타내는 평점입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">value</code></td>
+                  <td><span class='type-badge'>REAL</span></td>
+                  <td class="col-kr"><strong>가격 대비 가치 평점 (가성비)</strong></td>
+                  <td class="col-desc">지불한 숙박비 대비 숙소의 전반적인 수준이나 서비스가 합리적이었는지에 대한 게스트의 평가입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">reviews_count</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>총 리뷰 수</strong></td>
+                  <td class="col-desc">해당 숙소에 게스트들이 남긴 전체 리뷰의 누적 개수입니다. 평점의 통계적 신뢰도와 숙소의 대중적 인기도를 가늠하는 필수 지표입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="domain-section" data-domain="price">
+          <div class="domain-header">
+            <span class="domain-icon">💰</span>
+            <span class="domain-name">가격 및 요금 도메인 (Price Domain) · 1개 테이블</span>
+          </div>
+    
+          <div class="table-card" data-table="LISTING_PRICE">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_PRICE</span>
+                <span class="table-sub">1박 기본 숙박료, 청소비, 서비스 수수료, 세금 및 각종 할인 내역을 담고 있는 종속변수(Target) 분석의 핵심 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">가격 정보가 속한 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">label</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>가격 라벨</strong></td>
+                  <td class="col-desc">가격 노출 영역 상단에 표시되는 프로모션 또는 안내 텍스트 라벨입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">qualifier</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>가격 기준 단위</strong></td>
+                  <td class="col-desc">표시된 가격이 적용되는 기준 조건입니다 (예: '박당(per night)', '총액(total)').</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">price_amount</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>표시 숙박 요금</strong></td>
+                  <td class="col-desc">검색 목록 카드에서 게스트의 시선을 끄는 1박당 기준 요금 문자열입니다 (통화 기호 포함 가능).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">original_price</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>할인 전 원가</strong></td>
+                  <td class="col-desc">특가 할인이나 장기 투숙 할인이 적용되기 전 원래 책정되어 있던 정가입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">discounted_price</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>할인 적용 가격</strong></td>
+                  <td class="col-desc">프로모션이나 호스트 특별 할인이 적용된 후의 실제 1박당 할인가입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">base_price_description</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>기본 요금 산정 설명</strong></td>
+                  <td class="col-desc">순수 숙박 요금이 계산된 공식 및 설명 텍스트입니다 (예: '₩85,000 x 5박').</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">base_price_amount</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>기본 숙박 요금 합계</strong></td>
+                  <td class="col-desc">각종 수수료와 세금을 합산하기 전, 순수 숙박일수에 대한 기본 객실료 총액입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">service_fee</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>게스트 서비스 수수료</strong></td>
+                  <td class="col-desc">에어비앤비 플랫폼 서비스 운영, 보안 결제 시스템 및 고객 지원 제공 명목으로 부과되는 플랫폼 수수료입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">cleaning_fee</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>청소비</strong></td>
+                  <td class="col-desc">게스트 퇴실 후 전문 청소, 침구 세탁 및 방역을 위해 호스트가 청구하는 1회성 고정 비용입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">taxes_description</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>세금 안내 설명</strong></td>
+                  <td class="col-desc">해당 지역 법령에 따라 부과되는 부가가치세 및 지방 숙박세의 내역 설명 문구입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">taxes_amount</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>세금 합계 금액</strong></td>
+                  <td class="col-desc">예약 건에 부과되는 세금의 총 합계 금액입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">special_offer_description</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>특별 프로모션 설명</strong></td>
+                  <td class="col-desc">호스트가 설정한 기간 한정 특별 할인이나 특가 이벤트에 대한 설명입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">special_offer_amount</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>특별 프로모션 감면액</strong></td>
+                  <td class="col-desc">특별 할인으로 차감된 금액입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">total_price_description</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>총 결제 요금 설명</strong></td>
+                  <td class="col-desc">기본요금, 청소비, 수수료 및 세금이 모두 포함된 최종 금액에 대한 안내 문구입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">total_price_amount</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>최종 총 결제 금액</strong></td>
+                  <td class="col-desc">게스트가 예약 시 실제로 지불하게 되는 총 결제 금액입니다 (실제 지출 기준 가격 모델링의 핵심 변수).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">total_before_taxes</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>세전 총 결제 금액</strong></td>
+                  <td class="col-desc">세금을 제외하고 객실료, 청소비, 서비스 수수료만 합산한 세전 합계 요금입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">early_bird_discount</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>얼리버드 할인액</strong></td>
+                  <td class="col-desc">사전 조기 예약 고객에게 제공되는 얼리버드 할인 혜택 금액입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="domain-section" data-domain="content">
+          <div class="domain-header">
+            <span class="domain-icon">🖼️</span>
+            <span class="domain-name">콘텐츠 및 규칙 도메인 (Content Domain) · 3개 테이블</span>
+          </div>
+    
+          <div class="table-card" data-table="LISTING_IMAGE">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_IMAGE</span>
+                <span class="table-sub">숙소 상세 페이지에 등록된 고화질 갤러리 사진의 URL, 호스트 캡션 및 노출 순서를 담고 있는 1:N 하위 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>이미지 ID</strong></td>
+                  <td class="col-desc">갤러리 사진 항목의 고유 자동증가 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">해당 사진이 속한 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">image_url</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>사진 원본 URL</strong></td>
+                  <td class="col-desc">에어비앤비 CDN 서버에 호스팅된 고화질 숙소 사진의 웹 주소입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">caption</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>사진 캡션 설명</strong></td>
+                  <td class="col-desc">호스트가 사진마다 등록한 공간 설명 텍스트입니다 (예: '채광이 좋은 거실', '퀸사이즈 침대').</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">orientation</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>사진 가로/세로 방향</strong></td>
+                  <td class="col-desc">사진의 촬영 비율 방향입니다 (landscape: 가로형, portrait: 세로형).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">sort_order</code></td>
+                  <td><span class='type-badge'>INTEGER</span></td>
+                  <td class="col-kr"><strong>노출 순서 번호</strong></td>
+                  <td class="col-desc">상세 페이지 갤러리 슬라이드에 사진이 표시되는 정렬 순번입니다 (숙소별 사진 등록 수 산출 가능).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="LISTING_HIGHLIGHT">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_HIGHLIGHT</span>
+                <span class="table-sub">에어비앤비 알고리즘이 숙소의 매력 포인트로 자동 선정하여 상단에 띄워주는 대표 장점 배지 목록입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>하이라이트 ID</strong></td>
+                  <td class="col-desc">숙소 하이라이트 항목의 고유 자동증가 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">해당 특장점이 속한 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">title</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>대표 장점 제목</strong></td>
+                  <td class="col-desc">특장점의 핵심 타이틀입니다 (예: '우수한 위치', '원활한 체크인', '셀프 체크인').</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">subtitle</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>장점 상세 근거</strong></td>
+                  <td class="col-desc">해당 장점에 대한 구체적인 데이터 근거입니다 (예: '최근 투숙객의 95%가 위치에 별 5개를 주었습니다').</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">icon</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>아이콘 코드</strong></td>
+                  <td class="col-desc">웹/앱 화면에서 장점 옆에 표시되는 공식 아이콘 명칭입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">highlight_type</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>하이라이트 유형 분류</strong></td>
+                  <td class="col-desc">에어비앤비 시스템상 특장점의 분류 코드입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="LISTING_HOUSE_RULE">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_HOUSE_RULE</span>
+                <span class="table-sub">체크인/아웃 시간, 금연, 반려동물 동반 가능 여부 등 호스트가 설정한 숙소 이용 수칙 목록입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>규칙 ID</strong></td>
+                  <td class="col-desc">이용 규칙 항목의 고유 자동증가 식별자입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">해당 이용 규칙이 속한 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">category</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>규칙 분류</strong></td>
+                  <td class="col-desc">이용 규칙의 대분류 카테고리입니다 (예: 일반 규칙, 안전 지침, 특약 사항).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">title</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>규칙 제목</strong></td>
+                  <td class="col-desc">게스트가 준수해야 하는 규칙 문구입니다 (예: '체크인: 15:00 이후', '체크아웃: 11:00 이전', '금연', '반려동물 동반 불가').</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">icon</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>규칙 아이콘</strong></td>
+                  <td class="col-desc">규칙 안내 문구와 함께 렌더링되는 시각적 아이콘 코드입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">additional_info</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>추가 주의사항</strong></td>
+                  <td class="col-desc">호스트가 보충 설명으로 남긴 상세 주의 문구입니다 (예: '건물 전체 금연 구역이며 위반 시 특수 청소비 청구').</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="domain-section" data-domain="amenity">
+          <div class="domain-header">
+            <span class="domain-icon">✅</span>
+            <span class="domain-name">정책 및 편의시설 (Policy & Amenities) · 5개 테이블</span>
+          </div>
+    
+          <div class="table-card" data-table="CANCELLATION_POLICY">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">CANCELLATION_POLICY</span>
+                <span class="table-sub">에어비앤비가 정의한 표준 예약 취소 및 환불 규정 마스터 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>정책 고유 ID</strong></td>
+                  <td class="col-desc">에어비앤비 취소 정책의 고유 식별 코드입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">policy_name</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>취소 정책 명칭</strong></td>
+                  <td class="col-desc">에어비앤비 표준 환불 규정의 공식 명칭입니다 (Flexible: 유연, Moderate: 일반, Firm: 약간 엄격, Strict: 엄격 등).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="LISTING_CANCELLATION_POLICY">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_CANCELLATION_POLICY</span>
+                <span class="table-sub">각 숙소에 적용된 취소 및 환불 정책을 매핑하는 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">환불 정책이 적용된 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">cancellation_policy_id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>취소 정책 ID</strong></td>
+                  <td class="col-desc">해당 숙소에 적용된 환불 규정의 고유 ID입니다 (CANCELLATION_POLICY.id 참조).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="AMENITY_CATEGORY">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">AMENITY_CATEGORY</span>
+                <span class="table-sub">편의시설을 기능 및 공간별로 그룹화한 상위 카테고리 마스터 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>카테고리 ID</strong></td>
+                  <td class="col-desc">편의시설 대분류의 고유 식별 번호입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">name</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>카테고리 명칭</strong></td>
+                  <td class="col-desc">편의시설 분류 그룹의 이름입니다 (예: '욕실', '침실 및 세탁 시설', '엔터테인먼트', '냉난방', '주방 및 식당', '위치 특성' 등).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="AMENITY">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">AMENITY</span>
+                <span class="table-sub">에어비앤비 플랫폼에 등록된 모든 세부 편의시설(어메니티) 마스터 항목 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span></td>
+                  <td class="col-kr"><strong>편의시설 ID</strong></td>
+                  <td class="col-desc">개별 편의시설을 고유하게 식별하는 마스터 식별 번호입니다.</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">category_id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>소속 카테고리 ID</strong></td>
+                  <td class="col-desc">해당 편의시설이 소속된 대분류 카테고리의 고유 ID입니다 (AMENITY_CATEGORY.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">title</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>편의시설 명칭</strong></td>
+                  <td class="col-desc">편의시설의 공식 이름입니다 (예: '무선 인터넷', '헤어드라이어', '주방', '에어컨', '세탁기', '엘리베이터' 등).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">icon</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>아이콘 식별자</strong></td>
+                  <td class="col-desc">웹 및 모바일 인터페이스에서 편의시설 이름 앞에 표시되는 그래픽 아이콘 식별자입니다.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        
+          <div class="table-card" data-table="LISTING_AMENITY">
+            <div class="table-header">
+              <div class="table-title">
+                <span class="table-badge">LISTING_AMENITY</span>
+                <span class="table-sub">각 숙소와 제공 편의시설 간의 다대다(N:M) 관계를 매핑하고, 옵션 설명 및 실제 제공 여부를 기록하는 테이블입니다.</span>
+              </div>
+            </div>
+            <table class="dict-table">
+              <thead>
+                <tr>
+                  <th width="20%">변수명 (컬럼)</th>
+                  <th width="12%">타입 / 제약</th>
+                  <th width="20%">한글 명칭</th>
+                  <th width="48%">서술적 상세 설명</th>
+                </tr>
+              </thead>
+              <tbody>
+                        <tr>
+                  <td><code class="col-code">listing_id</code></td>
+                  <td><span class='type-badge'>TEXT</span> <span class='pk-badge'>PK</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>숙소 ID</strong></td>
+                  <td class="col-desc">편의시설을 제공하는 숙소의 고유 ID입니다 (LISTING.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">amenity_id</code></td>
+                  <td><span class='type-badge'>INTEGER</span> <span class='pk-badge'>PK</span> <span class='fk-badge'>FK</span></td>
+                  <td class="col-kr"><strong>편의시설 ID</strong></td>
+                  <td class="col-desc">숙소에서 구비하고 있는 편의시설의 마스터 ID입니다 (AMENITY.id 참조).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">subtitle</code></td>
+                  <td><span class='type-badge'>TEXT</span></td>
+                  <td class="col-kr"><strong>세부 옵션 설명</strong></td>
+                  <td class="col-desc">호스트가 덧붙인 편의시설의 브랜드, 스펙 또는 이용 조건입니다 (예: 'LG 55인치 4K TV', '무료 건물 내 주차장' 등).</td>
+                </tr>
+                <tr>
+                  <td><code class="col-code">is_available</code></td>
+                  <td><span class='type-badge'>BOOLEAN</span></td>
+                  <td class="col-kr"><strong>실제 제공 여부</strong></td>
+                  <td class="col-desc">해당 편의시설이 실제로 게스트에게 제공되는지 여부입니다 (일부 필수 편의시설 중 제외 항목 명시용).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Mermaid Init
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      er: {
+        useMaxWidth: false,
+        layoutDirection: 'LR'
+      }
+    });
+
+    mermaid.run({
+      querySelector: '.mermaid',
+      postRenderCallback: () => {
+        const svgElement = document.querySelector('#erd-container svg');
+        if (svgElement) {
+          svgElement.style.maxWidth = '100%';
+          bindEntityDescriptions(svgElement);
+        }
+      }
+    });
+
+    function bindEntityDescriptions(svgElement) {
+      const tooltip = document.getElementById('erd-tooltip');
+      const showDescription = (entityName, event, entity) => {
+        const tableCard = document.querySelector(`.table-card[data-table="${entityName}"]`);
+        const description = tableCard?.querySelector('.table-sub')?.textContent.trim();
+        tooltip.replaceChildren();
+
+        const title = document.createElement('strong');
+        title.textContent = `${entityName} · 테이블 인덱스`;
+        const summary = document.createElement('span');
+        summary.textContent = description || '이 테이블의 데이터 사전 요약을 찾을 수 없습니다.';
+        tooltip.append(title, summary);
+        tooltip.hidden = false;
+        positionTooltip(tooltip, event, entity);
+      };
+      const hideDescription = () => { tooltip.hidden = true; };
+
+      svgElement.querySelectorAll('g[id^="entity-"]').forEach((entity) => {
+        const entityName = entity.querySelector('text')?.textContent.trim();
+        if (!entityName) return;
+        entity.setAttribute('tabindex', '0');
+        entity.setAttribute('aria-label', `${entityName} 테이블 설명 보기`);
+        entity.setAttribute('role', 'button');
+        entity.addEventListener('click', () => {
+          const tableCard = document.querySelector(`.table-card[data-table="${entityName}"]`);
+          if (!tableCard) return;
+          tableCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          tableCard.classList.remove('is-target');
+          requestAnimationFrame(() => tableCard.classList.add('is-target'));
+          window.setTimeout(() => tableCard.classList.remove('is-target'), 1800);
+        });
+        entity.addEventListener('mouseenter', (event) => showDescription(entityName, event, entity));
+        entity.addEventListener('mousemove', (event) => positionTooltip(tooltip, event, entity));
+        entity.addEventListener('mouseleave', hideDescription);
+        entity.addEventListener('focus', () => {
+          const rect = entity.getBoundingClientRect();
+          showDescription(entityName, { clientX: rect.right, clientY: rect.top }, entity);
+        });
+        entity.addEventListener('blur', hideDescription);
+      });
+    }
+
+    function positionTooltip(tooltip, event, entity) {
+      const gap = 14;
+      const viewportPadding = 12;
+      const entityRect = entity.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      let left = Math.min(event.clientX + gap, window.innerWidth - tooltipRect.width - viewportPadding);
+      let top = Math.min(event.clientY + gap, window.innerHeight - tooltipRect.height - viewportPadding);
+
+      const overlapsEntity = left < entityRect.right && left + tooltipRect.width > entityRect.left
+        && top < entityRect.bottom && top + tooltipRect.height > entityRect.top;
+      if (overlapsEntity) {
+        if (entityRect.right + tooltipRect.width + gap <= window.innerWidth - viewportPadding) {
+          left = entityRect.right + gap;
+          top = Math.min(Math.max(entityRect.top, viewportPadding), window.innerHeight - tooltipRect.height - viewportPadding);
+        } else if (entityRect.left - tooltipRect.width - gap >= viewportPadding) {
+          left = entityRect.left - tooltipRect.width - gap;
+          top = Math.min(Math.max(entityRect.top, viewportPadding), window.innerHeight - tooltipRect.height - viewportPadding);
+        } else if (entityRect.bottom + tooltipRect.height + gap <= window.innerHeight - viewportPadding) {
+          left = Math.min(Math.max(event.clientX, viewportPadding), window.innerWidth - tooltipRect.width - viewportPadding);
+          top = entityRect.bottom + gap;
+        } else {
+          left = Math.min(Math.max(event.clientX, viewportPadding), window.innerWidth - tooltipRect.width - viewportPadding);
+          top = Math.max(viewportPadding, entityRect.top - tooltipRect.height - gap);
+        }
+      }
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    }
+  
+    // Domain filtering
+    function filterDomain(domainKey) {
+      document.querySelectorAll('.domain-pill').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      const sections = document.querySelectorAll('.domain-section');
+      sections.forEach(sec => {
+        if (domainKey === 'all' || sec.dataset.domain === domainKey) {
+          sec.style.display = 'block';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+    }
+
+    // Search filtering
+    function filterDictionary(query) {
+      query = query.toLowerCase().trim();
+      const rows = document.querySelectorAll('.dict-table tbody tr');
+      const tableCards = document.querySelectorAll('.table-card');
+      const sections = document.querySelectorAll('.domain-section');
+
+      if (!query) {
+        rows.forEach(r => r.style.display = '');
+        tableCards.forEach(tc => tc.style.display = '');
+        sections.forEach(sec => sec.style.display = '');
+        return;
+      }
+
+      tableCards.forEach(card => {
+        let hasMatch = false;
+        const cardRows = card.querySelectorAll('tbody tr');
+        cardRows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          if (text.includes(query)) {
+            row.style.display = '';
+            hasMatch = true;
+          } else {
+            row.style.display = 'none';
+          }
+        });
+        card.style.display = hasMatch ? '' : 'none';
+      });
+
+      sections.forEach(sec => {
+        const visibleCards = sec.querySelectorAll('.table-card:not([style*="display: none"])');
+        sec.style.display = visibleCards.length > 0 ? '' : 'none';
+      });
+    }
+
+  </script>
+</body>
+</html>
