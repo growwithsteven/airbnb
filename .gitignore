@@ -1,0 +1,7 @@
+# Dependencies & temporary caches
+node_modules/
+**/node_modules/
+.slidev/
+
+# OS metadata
+.DS_Store

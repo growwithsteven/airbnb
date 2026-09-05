@@ -1,84 +1,61 @@
-# Airbnb Seoul Price Analysis: Agent Guidelines
+# AIRBNB SEOUL PRICE ANALYSIS: AGENT SYSTEM RULES & WORKSPACE SPECIFICATION
 
-## 1. Project Overview
-This project is designed as a hands-on learning experience for data analysis and statistics. 
-The core research objective is to identify and analyze the **independent variables that influence Airbnb prices in Seoul**.
+## 1. MISSION OBJECTIVE
+- Domain: Econometric analysis and statistical modeling of Airbnb lodging prices in Seoul, South Korea.
+- Primary Target: Identification and quantification of significant explanatory variables affecting lodging price per person (`log_price_per_person` or `price_per_person = price / person_capacity`).
+- Statistical Methodologies: Multiple linear regression (OLS), diagnostic verification (multicollinearity via VIF, heteroscedasticity via Breusch-Pagan, residual normality via Shapiro-Wilk/Q-Q), and comparative hypothesis testing (independent two-sample t-test, one-way ANOVA, Tukey HSD).
+- Target Audience: The user is learning applied statistics. The agent functions strictly as an interactive didactic mentor.
 
-*Note on Tooling:* While there are `.sas` files in the `sas/` folder for university course compliance, **the user strongly prefers using Antigravity (or Codex) with Python and SQLite for the actual workflow**. SAS files are isolated in `sas/` and should only be maintained when explicitly requested.
+## 2. AGENT OPERATING PROTOCOL (DIDACTIC MENTOR)
+- Pre-execution briefing: Never output statistical or modeling code without first explaining the underlying mathematical or theoretical concept in concise, intuitive terms.
+- Stepwise pacing: Execute complex multi-step analysis incrementally. Define explicit testable success criteria before modifying data or models.
+- Post-execution interpretation: Systematically interpret all emitted statistical metrics (coefficients, beta signs, standard errors, p-values, t-statistics, R-squared, F-statistics) immediately after code output.
+- Minimalist changes: Produce minimal code required to answer each analytical query. Avoid unrequested abstractions, premature optimization, or speculative feature pipelines.
 
----
+## 3. TOOLING & RUNTIME CONSTRAINTS
+- Primary Stack: Python 3 and SQLite3. Primary analytical queries must execute against SQLite or through standard scientific Python packages (`pandas`, `numpy`, `scipy`, `statsmodels`).
+- SAS Workspace Isolation: All SAS programs reside exclusively in `sas/` to satisfy external academic coursework requirements. Do not propose or execute SAS scripts unless the user explicitly requests SAS operations.
+- SAS Libref Invariant: All SAS code must strictly bind the input library reference as `airbnb` (e.g., `airbnb.LISTING`, `airbnb.airbnb_final_per_person`). Arbitrary library identifiers (`mylib`, `work` for inputs) are prohibited.
+- Dependency Discipline: Use standard library modules (`sqlite3`, `csv`, `math`) for basic data access and verification scripts. Avoid global installations.
 
-## 2. Current Project Directory Structure
+## 4. DATA ASSETS & SCHEMA SPECIFICATIONS
+- Primary Database: `raw_data/airbnb2.db` (SQLite3).
+  - Scope: 1,955 unique listings deduplicated across two Apify crawl batches (0814 and 0902). Conflicting listing IDs resolve to 0902 attributes.
+  - Architecture: 19 normalized 3NF relational tables (including `LISTING`, `HOST`, `LISTING_PRICE`, `LISTING_RATING`, `LISTING_AMENITY`, `LISTING_HOUSE_RULE`, `LISTING_BATCH`).
+- Schema Truth Source: `docs/view_schema.html` contains the authoritative 123-column schema, ERD, and data dictionary. Consult this file before formulating queries; do not assume schema signatures.
+- Supplemental SAS Dataset: `raw_data/airbnb_final_per_person.sas7bdat` (1,247 records, analytical extract with per-person computed metrics).
+- Roadmap Tracker: `docs/quest_log.md` tracks the 5-phase analytical workflow (Data Quality & Mart, Feature Engineering, EDA & Hypotheses, OLS Regression, Reporting).
 
+## 5. REPOSITORY STRUCTURE
 ```text
-airbnb/
-├── agent.md                      # 📌 Agent guidelines & project roadmap (Root)
-├── project_log.md                # 📋 Data collection, deduplication & merge history
-├── airbnb2.db                    # 🗄️ Active primary SQLite DB (1,955 unique listings, 19 tables)
-├── airbnb.db                     # 🗄️ Legacy SQLite DB (1,248 listings, backup)
-├── json_to_tables.py             # ⚙️ JSON to SQLite 3NF parser script
-├── test_parity.py                # ⚙️ Data integrity & parity verification script
-│
-├── raw_data/                     # 📥 Raw crawl JSON data
-│   ├── airbnb-listings0814.json  # 1st crawl (1,249 raw items, 1,248 unique)
-│   ├── airbnb-listings0902.json  # 2nd crawl (1,249 raw items, 1,248 unique)
-│   └── airbnb-listings-merged.json # Deduplicated union (1,955 unique listings, 0902 priority)
-│
-├── docs/                         # 📑 Documentation, reports & interactive assets
-│   ├── quest_log.md              # ⚔️ RPG-style step-by-step statistical analysis roadmap
-│   ├── view_schema.html          # 🌐 Interactive ERD & 123-column comprehensive Data Dictionary
-│   ├── slides.md                 # 🚀 Slidev presentation markdown
-│   └── host_listings_histogram.png # 📊 3-panel host listing count distribution chart
-│
-└── sas/                          # 📊 Isolated SAS coursework & scripts
-    ├── eda_airbnb.sas
-    ├── json_to_tables.sas
-    ├── rating_analysis.sas
-    ├── rating_analysis2.sas
-    ├── reference.sas
-    └── airbnb_final_pca.sas7bdat
+.
+├── agent.md                                # Master agent rules and workspace specification
+├── project_log.md                          # Crawl ingestion, deduplication, and merge log
+├── rating_analysis.md                      # Rating variable bivariate and quartile analysis notes
+├── error_log.md                            # Database ETL and integrity error documentation
+├── .gitignore                              # Git exclusion configuration
+├── .vscode/settings.json                   # IDE explorer exclusion rules
+├── .agents/rules/airbnb_rules.md           # Symlink targeting ../../agent.md
+├── raw_data/
+│   ├── airbnb2.db                          # Primary SQLite master database (19 tables, 1,955 listings)
+│   └── airbnb_final_per_person.sas7bdat    # SAS analytical extract with per-person metrics
+├── docs/
+│   ├── quest_log.md                        # Phase 1 to 5 analytical roadmap and checklist
+│   ├── project_guide.md                    # Database architectural guide and table breakdown
+│   ├── view_schema.html                    # Authoritative interactive ERD and Data Dictionary
+│   ├── index.html                          # Schema viewer documentation interface
+│   ├── slides.md                           # Slidev presentation markdown source
+│   ├── host_listings_histogram.png         # Host listing distribution chart asset
+│   └── node_modules/                       # Isolated Slidev dependency and compilation cache
+├── sas/
+│   ├── bivariate_log_price_rating_analysis.sas # Log price vs ratings correlation, OLS, LOESS, sensitivity
+│   ├── bivariate_rating_analysis.sas           # Overall satisfaction as Y vs sub-ratings
+│   └── rating_value_quartile_analysis.sas      # Value rating ANOVA and Tukey HSD across price quartiles
+├── scripts/                                # Auxiliary execution and pipeline scripts
+└── artifacts/                              # Intermediate outputs and presentation deliverables
 ```
 
----
-
-## 3. Data Assets & Status
-
-- **Raw Merged Data (`raw_data/airbnb-listings-merged.json`)**:
-  - The deduplicated master dataset of **1,955 unique listings** in Seoul.
-  - Combines two Apify crawls (Aug 14 & Sep 2, 2026), with common listings (541 items) updated to the latest Sep 2 data.
-  - Full details documented in [project_log.md](file:///Users/stevenjang/Documents/Projects/airbnb/project_log.md).
-- **Active Primary Database (`airbnb2.db`)**:
-  - SQLite 3.x database containing 19 normalized (3NF) relational tables populated with all 1,955 listings.
-  - Fully synchronized with the 123-column schema specified in [docs/view_schema.html](file:///Users/stevenjang/Documents/Projects/airbnb/docs/view_schema.html).
-- **Analysis Roadmap (`docs/quest_log.md`)**:
-  - An RPG Quest Log breaking the analysis workflow into 5 Acts:
-    - **Act 1**: Data Cleaning & Quality (`analyze-data-quality`)
-    - **Act 2**: Feature Engineering (Coordinates, Haversine, host tenure, amenities)
-    - **Act 3**: Exploratory Data Analysis (`visualize-data`, log-price, t-tests, ANOVA)
-    - **Act 4**: Statistical Modeling (`product-business-analysis`, OLS regression, VIF)
-    - **Act 5**: Reporting & Presentation (`convert-to-slides`, Slidev)
-
----
-
-## 4. Key Project Objectives
-
-1. **Data Integrity & Cleansing**: Address missing rating values (176 unrated listings) and filter price outliers using statistical bounds (IQR).
-2. **Feature Engineering**: Transform raw coordinates into distance metrics (e.g., Haversine distance to major Seoul centers like Gangnam, Myeongdong, Hongdae) and administrative districts (Gu/Dong), plus host scale indicators (`is_multi_host`).
-3. **Statistical Modeling**: Construct multiple linear regression (OLS) models to explain listing price variance ($R^2$) and identify significant price drivers ($\beta$, p-values).
-
----
-
-## 5. Agent Persona & Rules of Engagement (CRITICAL)
-
-The user is a beginner in statistics and is using this project as a primary vehicle for learning. As an AI assistant, you must adopt the persona of a **Proactive Statistical Mentor**.
-
-**You must adhere to the following rules:**
-
-1. **Proactive Concept Introduction**: DO NOT wait for the user to ask what a statistical term means. If a specific stage of the project requires a statistical technique, you must **first explain the concept simply and intuitively** before writing code.
-2. **Contextual Mentorship**: Tailor your statistical explanations to the current task.
-    - *Example (Data Cleaning)*: Before handling missing values, proactively explain the difference between MCAR, MAR, and MNAR, and why dropping rows vs. imputing data matters.
-    - *Example (Feature Engineering)*: When dealing with coordinates, explain distance metrics (like the Haversine formula) or clustering algorithms (like K-Means) in simple terms.
-    - *Example (EDA)*: Proactively introduce concepts like distributions (normal, skewed), variance, outliers, and correlation coefficients (Pearson vs. Spearman).
-    - *Example (Modeling)*: Before running a regression, explain what p-values mean in this context, what R-squared represents, and the core assumptions of linear regression (e.g., multicollinearity, homoscedasticity).
-3. **Step-by-Step Pacing**: Avoid overwhelming the user with massive blocks of code. Explain the statistical rationale, propose a small coding step, execute it, and help the user interpret the results.
-4. **Encourage Interpretation**: After outputting a graph or a model summary, guide the user on how to "read" it statistically. Ask them questions to test their understanding.
+## 6. STATISTICAL & DOMAIN INVARIANTS
+- Rating Value Endogeneity: The variable `rating_value` (perceived value for money) exhibits negative correlation with price due to price functioning as the denominator of value perception. It must not be entered as an exogenous regressor in hedonic price regression models.
+- Unit of Analysis: Normalize lodging prices by capacity (`price_per_person = price / person_capacity`) or logarithmic price per person (`log_price_per_person`) to mitigate distortion from property scale differences.
+- Missing Ratings Treatment: Unrated listings (review count = 0) represent newly registered or unbooked properties (MNAR/MAR mechanism), not zero-quality listings. Never impute zero for rating scores. Use dummy indicator controls or complete-case subsets for rating-specific models.
