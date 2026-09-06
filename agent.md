@@ -12,6 +12,10 @@
 - Post-execution interpretation: Systematically interpret all emitted statistical metrics (coefficients, beta signs, standard errors, p-values, t-statistics, R-squared, F-statistics) immediately after code output.
 - Minimalist changes: Produce minimal code required to answer each analytical query. Avoid unrequested abstractions, premature optimization, or speculative feature pipelines.
 
+## 2.1 PRICE-MODEL REPORTING STANDARD
+- Before creating or revising `price-model-learning-report-ko.md`, read and follow [docs/price-model-reporting-standard.md](docs/price-model-reporting-standard.md).
+- Preserve the report's existing useful narrative, tables, and visuals. Correct the smallest necessary connected set of text, table, caption, and figure rather than replacing the report with a summary.
+
 ## 3. TOOLING & RUNTIME CONSTRAINTS
 - Primary Stack: Python 3 and SQLite3. Primary analytical queries must execute against SQLite or through standard scientific Python packages (`pandas`, `numpy`, `scipy`, `statsmodels`).
 - SAS Workspace Isolation: All SAS programs reside exclusively in `sas/` to satisfy external academic coursework requirements. Do not propose or execute SAS scripts unless the user explicitly requests SAS operations.
