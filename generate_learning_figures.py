@@ -390,6 +390,39 @@ def fig5_external_residuals_and_gains():
     plt.close(fig)
     print("Saved fig5_external_residuals_and_gains.png")
 
+def fig6_actual_vs_predicted():
+    """Figure 6: Corrected-model predictions against displayed nightly prices."""
+    conn = sqlite3.connect(DB_PATH)
+    raw_audit = conn.execute(
+        "SELECT value_json FROM PRICE_MODEL_RUN_AUDIT "
+        "WHERE audit_key='external_json_evaluation'"
+    ).fetchone()[0]
+    conn.close()
+    predictions = pd.DataFrame(json.loads(raw_audit)["corrected_predictions"])
+
+    actual = predictions["observed_nightly_price_usd"]
+    predicted = predictions["predicted_nightly_price_usd"]
+    upper = max(actual.max(), predicted.max()) * 1.04
+
+    fig, ax = plt.subplots(figsize=(7.5, 7))
+    ax.scatter(actual, predicted, s=28, alpha=0.62, color="#27ae60", edgecolors="none")
+    ax.plot([0, upper], [0, upper], "--", color="#34495e", lw=1.5, label="Perfect prediction")
+    ax.set_xlim(0, upper)
+    ax.set_ylim(0, upper)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_title("Corrected Model: Actual vs Predicted Nightly Price", pad=12)
+    ax.set_xlabel("Displayed nightly price on validation listing (USD)")
+    ax.set_ylabel("Corrected-model predicted nightly price (USD)")
+    ax.legend(frameon=True, loc="upper left")
+    ax.text(
+        0.98, 0.03, "Each point is one of 392 validation listings.",
+        transform=ax.transAxes, ha="right", va="bottom", fontsize=9, color="#4d4d4d"
+    )
+    plt.tight_layout()
+    fig.savefig(FIG_DIR / "fig6_actual_vs_predicted.png")
+    plt.close(fig)
+    print("Saved fig6_actual_vs_predicted.png")
+
 if __name__ == "__main__":
     print("Generating educational figures in artifacts/figures/...")
     fig1_validation_architecture()
@@ -398,4 +431,5 @@ if __name__ == "__main__":
     fig3b_seoul_cluster_map()
     fig4_model_cv_performance()
     fig5_external_residuals_and_gains()
-    print("All 5 figures generated successfully!")
+    fig6_actual_vs_predicted()
+    print("All 6 figures generated successfully!")
