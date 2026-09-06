@@ -21,18 +21,17 @@
 ## 4. DATA ASSETS & SCHEMA SPECIFICATIONS
 - Primary Database: `raw_data/airbnb2.db` (SQLite3).
   - Scope: 1,955 unique listings deduplicated across two Apify crawl batches (0814 and 0902). Conflicting listing IDs resolve to 0902 attributes.
-  - Architecture: 19 normalized 3NF relational tables (including `LISTING`, `HOST`, `LISTING_PRICE`, `LISTING_RATING`, `LISTING_AMENITY`, `LISTING_HOUSE_RULE`, `LISTING_BATCH`).
-- Schema Truth Source: `docs/view_schema.html` contains the authoritative 123-column schema, ERD, and data dictionary. Consult this file before formulating queries; do not assume schema signatures.
-- Supplemental SAS Dataset: `raw_data/airbnb_final_per_person.sas7bdat` (1,247 records, analytical extract with per-person computed metrics).
-- Roadmap Tracker: `docs/quest_log.md` tracks the 5-phase analytical workflow (Data Quality & Mart, Feature Engineering, EDA & Hypotheses, OLS Regression, Reporting).
+  - Architecture: 20 relational and operational tables (including `LISTING`, `HOST`, `LISTING_PRICE`, `LISTING_RATING`, `LISTING_AMENITY`, `LISTING_HOUSE_RULE`, `LISTING_BATCH`, `LISTING_EXCLUSION`).
+- Schema Truth Source: `docs/index.html` contains the authoritative 123-column schema, ERD, and data dictionary. Consult this file before formulating queries; do not assume schema signatures.
+- Archived Team Reference Dataset: `raw_data/airbnb_final_per_person.sas7bdat` (1,247 records, prior team project extract; retained strictly for historical reference, not active solo development).
+- Project Guide & Roadmap Tracker: [project_log.md](project_log.md) tracks the unified 5-phase analytical roadmap, research hypotheses, crawl ingestion, and deduplication records.
 
 ## 5. REPOSITORY STRUCTURE
 ```text
 .
 ├── agent.md                                # Master agent rules and workspace specification
-├── project_log.md                          # Crawl ingestion, deduplication, and merge log
+├── project_log.md                          # Unified master project guide, roadmap (Phase 1-5), and ingestion log
 ├── rating_analysis.md                      # Rating variable bivariate and quartile analysis notes
-├── error_log.md                            # Database ETL and integrity error documentation
 ├── .gitignore                              # Git exclusion configuration
 ├── .vscode/settings.json                   # IDE explorer exclusion rules
 ├── .agents/rules/airbnb_rules.md           # Symlink targeting ../../agent.md
@@ -40,18 +39,14 @@
 │   ├── airbnb2.db                          # Primary SQLite master database (19 tables, 1,955 listings)
 │   └── airbnb_final_per_person.sas7bdat    # SAS analytical extract with per-person metrics
 ├── docs/
-│   ├── quest_log.md                        # Phase 1 to 5 analytical roadmap and checklist
-│   ├── project_guide.md                    # Database architectural guide and table breakdown
-│   ├── view_schema.html                    # Authoritative interactive ERD and Data Dictionary
-│   ├── index.html                          # Schema viewer documentation interface
+│   ├── index.html                          # Authoritative interactive ERD and Data Dictionary
 │   ├── slides.md                           # Slidev presentation markdown source
-│   ├── host_listings_histogram.png         # Host listing distribution chart asset
 │   └── node_modules/                       # Isolated Slidev dependency and compilation cache
 ├── sas/
 │   ├── bivariate_log_price_rating_analysis.sas # Log price vs ratings correlation, OLS, LOESS, sensitivity
 │   ├── bivariate_rating_analysis.sas           # Overall satisfaction as Y vs sub-ratings
-│   └── rating_value_quartile_analysis.sas      # Value rating ANOVA and Tukey HSD across price quartiles
-├── scripts/                                # Auxiliary execution and pipeline scripts
+│   ├── rating_value_quartile_analysis.sas      # Value rating ANOVA and Tukey HSD across price quartiles
+│   └── bivariate_rating_analysis.log           # SAS Studio execution log
 └── artifacts/                              # Intermediate outputs and presentation deliverables
 ```
 
