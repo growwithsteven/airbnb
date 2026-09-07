@@ -64,9 +64,10 @@ def main():
     plot_types = ["Entire home/apt", "Private room", "Shared room"]
     df_sub = df[df["room_type"].isin(plot_types)].copy()
 
-    # 모델 적합
-    model1 = smf.ols("ln_nightly_price_usd ~ cleanliness", data=df_sub).fit()
-    model2 = smf.ols('ln_nightly_price_usd ~ cleanliness + C(room_type, Treatment(reference="Entire home/apt"))', data=df_sub).fit()
+    # 회귀 수치와 슬라이드의 분석 표본을 일치시킨다. 호텔 객실 1건은
+    # 점·유형별 선을 읽기 쉽게 하기 위해 표시에서만 생략한다.
+    model1 = smf.ols("ln_nightly_price_usd ~ cleanliness", data=df).fit()
+    model2 = smf.ols('ln_nightly_price_usd ~ cleanliness + C(room_type, Treatment(reference="Entire home/apt"))', data=df).fit()
 
     palette = {
         "Entire home/apt": "#2b5c8f",   # 깊은 네이비
